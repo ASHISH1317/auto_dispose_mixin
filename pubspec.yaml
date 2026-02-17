@@ -1,0 +1,19 @@
+name: auto_dispose_mixin
+description: A lightweight Flutter mixin that automatically disposes controllers, subscriptions, and other resources to prevent memory leaks.
+version: 1.0.0
+homepage: https://github.com/ASHISH1317/auto_dispose_mixin
+repository: https://github.com/ASHISH1317/auto_dispose_mixin
+issue_tracker: https://github.com/ASHISH1317/auto_dispose_mixin/issues
+
+environment:
+  sdk: ^3.11.0
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
