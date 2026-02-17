@@ -355,7 +355,7 @@ Contributions welcome.
 ## 📄 License
 
 MIT License  
-https://opensource.org/licenses/MIT
+https://github.com/ASHISH1317/auto_dispose_mixin/blob/main/LICENSE
 
 ---
 
