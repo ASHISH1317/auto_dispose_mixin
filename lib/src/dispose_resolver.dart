@@ -22,9 +22,15 @@ import 'dispose_entry.dart';
 /// - `Timer`
 /// - `StreamSubscription`
 /// - `FocusNode`
-/// - `ChangeNotifier` (e.g. `TextEditingController`, `ScrollController`)
+/// - `ChangeNotifier` / `ValueNotifier` (e.g. `TextEditingController`, `ScrollController`)
+/// - `OverlayEntry` (calls `remove()` then `dispose()`)
+/// - `Sink` / `StreamController` / `WebSocket` / `IOSink`
 /// - Custom implementations of [Disposable]
-/// - Duck-typed objects with a `dispose()` method
+/// - Duck-typed objects resolving:
+///   - `dispose()` (e.g. `TabController`, Plugin Controllers)
+///   - `cancel()` (e.g. `Timer`, `Worker`)
+///   - `close()` (e.g. `ReceivePort`, `PersistentBottomSheetController`)
+///   - `kill()` (e.g. `Isolate`)
 ///
 /// ------------------------------------------------------------
 ///
@@ -98,6 +104,24 @@ DisposeEntry? resolveDisposable(Object object) {
     return DisposeEntry(target: object, onDispose: object.dispose);
   }
 
+  // Sink (StreamController, EventSink, IOSink, WebSocket, etc.)
+  if (object is Sink) {
+    return DisposeEntry(target: object, onDispose: object.close);
+  }
+
+  // OverlayEntry
+  if (object is OverlayEntry) {
+    return DisposeEntry(
+      target: object,
+      onDispose: () {
+        if (object.mounted) {
+          object.remove();
+        }
+        object.dispose();
+      },
+    );
+  }
+
   // Custom Disposable
   if (object is Disposable) {
     return DisposeEntry(
@@ -111,15 +135,37 @@ DisposeEntry? resolveDisposable(Object object) {
     );
   }
 
-  // Duck typing: any object with a dispose() method
+  // Duck typing: dispose()
   try {
     final dynamic dyn = object;
     if (dyn.dispose is Function) {
-      return DisposeEntry(target: object, onDispose: dyn.dispose);
+      return DisposeEntry(target: object, onDispose: () => dyn.dispose());
     }
-  } catch (_) {
-    // Ignore reflection failures
-  }
+  } catch (_) {}
+
+  // Duck typing: cancel()
+  try {
+    final dynamic dyn = object;
+    if (dyn.cancel is Function) {
+      return DisposeEntry(target: object, onDispose: () => dyn.cancel());
+    }
+  } catch (_) {}
+
+  // Duck typing: close()
+  try {
+    final dynamic dyn = object;
+    if (dyn.close is Function) {
+      return DisposeEntry(target: object, onDispose: () => dyn.close());
+    }
+  } catch (_) {}
+
+  // Duck typing: kill() (e.g. Isolate)
+  try {
+    final dynamic dyn = object;
+    if (dyn.kill is Function) {
+      return DisposeEntry(target: object, onDispose: () => dyn.kill());
+    }
+  } catch (_) {}
 
   return null;
 }

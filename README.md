@@ -109,22 +109,29 @@ No `dispose()` override required.
 
 ## 🎯 Supported Disposable Types
 
-`AutoDisposeMixin` automatically handles:
+`AutoDisposeMixin` automatically handles an exhaustive list of Flutter and Dart controllers, natively saving you from writing disposal boilerplate.
 
-### ChangeNotifier Family
+### ChangeNotifier / ValueNotifier Family
+*(Most UI Controllers)*
 
 * `TextEditingController`
-* `ScrollController`
-* `PageController`
-* `TabController`
+* `ScrollController`, `PageController`, `TabController`
 * `AnimationController`
-* `ValueNotifier`
-* `FocusNode`
-* Any `ChangeNotifier`
+* `FocusNode`, `FocusScopeNode`
+* `SearchController`
+* Any custom class extending `ChangeNotifier` or `ValueNotifier`
 
-### Streams
+### Streams & Sinks
+*(Async Data)*
 
 * `StreamSubscription` → `.cancel()`
+* `StreamController`, `BroadcastStreamController` → `.close()`
+* `IOSink`, `EventSink`, `WebSocket` → `.close()`
+
+### UI & Flutter Core
+* `OverlayEntry` → Natively calls `.remove()` if mounted, then `.dispose()`
+* `Timer` / `RestartableTimer` → `.cancel()`
+* `Ticker` → `.stop()`, `.dispose()`
 
 ### Custom Disposable Interface
 
@@ -136,14 +143,25 @@ abstract class Disposable {
 }
 ```
 
-### Duck Typing
+### Advanced Duck Typing (The "Senior Dev" Checklist)
 
-Any object with a `dispose()` method:
+If your object isn't in the standard Flutter list above, `AutoDisposeMixin` will dynamically detect and safely call its cleanup method. This automatically handles thousands of 3rd party plugins (like `VideoPlayerController`, GetX `Worker`, etc).
+
+The mixin implicitly supports anything that has:
+* `.dispose()` (e.g. `TapGestureRecognizer`, Plugin controllers)
+* `.cancel()` (e.g. `Worker`, `EventChannel` subscriptions)
+* `.close()` (e.g. `ReceivePort`, `PersistentBottomSheetController`)
+* `.kill()` (e.g. `Isolate`)
 
 ```dart
-class MyService {
-  void dispose() {}
+class FakeSocketClient {
+  void close() {
+    print('Socket closed');
+  }
 }
+
+late final socket =
+    registerForDispose(FakeSocketClient());
 ```
 
 ### Manual Cleanup
